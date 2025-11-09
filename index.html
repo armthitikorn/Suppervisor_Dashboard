@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Dashboard ประเมินผลพนักงาน (AI Scoring)</title>
+    <style>
+        /* CSS สำหรับ Dashboard */
+        body { 
+            font-family: 'TH Sarabun New', sans-serif;
+            padding: 20px; 
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #007bff;
+            font-size: 32px;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+        h2 {
+            color: #343a40;
+            font-size: 24px;
+            margin-top: 30px;
+        }
+        .summary-cards {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .card {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 6px;
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+        }
+        .card h3 {
+            font-size: 16px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        .card p {
+            font-size: 36px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        #submissionsTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        #submissionsTable th, #submissionsTable td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+            font-size: 16px;
+        }
+        #submissionsTable th {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        .score-pass { color: #28a745; font-weight: bold; }
+        .score-fail { color: #dc3545; font-weight: bold; }
+        .score-pending { color: #ffc107; }
+        
+        .btn-analyze {
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-analyze:hover {
+            background-color: #138496;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 AI Tele-Sales Simulator - Supervisor Dashboard</h1>
+        
+        <div class="summary-cards">
+            <div class="card">
+                <h3>จำนวนการส่งผลงานทั้งหมด</h3>
+                <p id="totalSubmissions">0</p>
+            </div>
+            <div class="card">
+                <h3>อัตราผ่านเกณฑ์ AI</h3>
+                <p id="passRate">0%</p>
+            </div>
+            <div class="card">
+                <h3>คะแนนเฉลี่ย AI</h3>
+                <p id="avgScore">N/A</p>
+            </div>
+            <div class="card">
+                <h3>รอการประเมิน (AI Queue)</h3>
+                <p id="pendingQueue">0</p>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <h2>รายการผลงานที่ส่งเข้ามา</h2>
+        <table id="submissionsTable">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">วันที่ส่ง</th>
+                    <th onclick="sortTable(1)">ชื่อ/รหัสพนักงาน</th>
+                    <th onclick="sortTable(2)">ระดับความยาก</th>
+                    <th onclick="sortTable(3)">สถานะ AI Score</th>
+                    <th onclick="sortTable(4)">คะแนน AI (จาก 100)</th>
+                    <th>ไฟล์เสียง (Link)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="submissionsList">
+                </tbody>
+        </table>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+        // --- 1. Supabase Config (ใช้ค่าเดิมจากไฟล์พนักงาน) ---
+        const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'; 
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        // --- 2. Mock AI Scoring Function (จำลอง) ---
+        // ในการใช้งานจริง ฟังก์ชันนี้จะเรียกใช้ Backend/AI API
+        async function runAIScoring(submissionId) {
+            console.log(`Running AI Score for Submission ID: ${submissionId}`);
+            
+            // **ส่วนนี้คือ Logic การเชื่อมต่อ AI จริง**
+            // 1. ส่ง URL ไฟล์เสียงไปยัง Backend (Server)
+            // 2. Backend ใช้ AI (เช่น Gemini, ASR + NLP) ประเมิน:
+            //    - ความครบถ้วนของสคริปต์ (S1, S4, S5)
+            //    - การจัดการข้อโต้แย้ง (S3)
+            //    - น้ำเสียง/ความเร็วในการพูด
+            // 3. AI ส่งผลลัพธ์เป็นคะแนนกลับมา
+            
+            // Mock delay and random score for demonstration
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const randomScore = Math.floor(Math.random() * 41) + 60; // 60-100
+                    const result = {
+                        score: randomScore,
+                        status: 'Scored',
+                        feedback: `AI ประเมิน: ครบถ้วน (90%), น้ำเสียงดี (80%).`,
+                        pass: randomScore >= 80 ? true : false
+                    };
+                    resolve(result);
+                }, 2000); // 2 วินาที
+            });
+        }
+        
+        // --- 3. Main Fetch and Display Logic ---
+        async function fetchSubmissions() {
+            const { data, error } = await supabase
+                .from('submissions')
+                .select('*')
+                .eq('part_number', 99) // ดึงเฉพาะ Final Full Session
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error fetching submissions:', error);
+                document.getElementById('submissionsList').innerHTML = 
+                    `<tr><td colspan="7">Error: Cannot load data. ${error.message}</td></tr>`;
+                return;
+            }
+            
+            updateDashboardSummary(data);
+            renderSubmissionsTable(data);
+        }
+
+        // --- 4. Update Summary Cards ---
+        function updateDashboardSummary(data) {
+            const total = data.length;
+            const scored = data.filter(s => s.ai_score !== null).length;
+            const passed = data.filter(s => s.ai_score !== null && s.ai_score >= 80).length;
+            const pending = total - scored;
+            const avgScore = scored > 0 
+                ? (data.filter(s => s.ai_score !== null).reduce((sum, s) => sum + s.ai_score, 0) / scored).toFixed(1)
+                : 'N/A';
+            const passRate = scored > 0 ? ((passed / scored) * 100).toFixed(1) : '0';
+
+            document.getElementById('totalSubmissions').textContent = total;
+            document.getElementById('passRate').textContent = `${passRate}%`;
+            document.getElementById('avgScore').textContent = avgScore;
+            document.getElementById('pendingQueue').textContent = pending;
+        }
+
+        // --- 5. Render Table ---
+        function renderSubmissionsTable(data) {
+            const tbody = document.getElementById('submissionsList');
+            tbody.innerHTML = '';
+
+            data.forEach(item => {
+                const score = item.ai_score;
+                let scoreText = 'รอประเมิน';
+                let scoreClass = 'score-pending';
+                let actionButton = `<button class="btn-analyze" 
+                    onclick="triggerAIScoring('${item.id}')">Run AI Score</button>`;
+                
+                if (score !== null) {
+                    scoreText = score.toFixed(0);
+                    scoreClass = score >= 80 ? 'score-pass' : 'score-fail';
+                    actionButton = 'ประเมินแล้ว';
+                }
+                
+                const difficultyMatch = item.question_text.match(/Difficulty: (.*)\)/);
+                const difficulty = difficultyMatch ? difficultyMatch[1] : 'N/A';
+                
+                const row = `
+                    <tr id="row-${item.id}">
+                        <td>${new Date(item.created_at).toLocaleString('th-TH')}</td>
+                        <td>${item.name || 'N/A'}</td>
+                        <td>${difficulty}</td>
+                        <td class="${scoreClass}">${scoreText === 'รอประเมิน' ? 'รอประเมิน' : (score >= 80 ? 'ผ่าน' : 'ไม่ผ่าน')}</td>
+                        <td class="${scoreClass}">${scoreText}</td>
+                        <td><a href="${item.audio_url}" target="_blank">ฟังไฟล์</a></td>
+                        <td>${actionButton}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+        
+        // --- 6. Event Handler for AI Scoring (เชื่อมต่อกับ Mock Function) ---
+        window.triggerAIScoring = async function(submissionId) {
+            const button = document.querySelector(`#row-${submissionId} .btn-analyze`);
+            if (button.disabled) return;
+            
+            button.textContent = '⏳ กำลังประเมิน...';
+            button.disabled = true;
+
+            const result = await runAIScoring(submissionId);
+            
+            // อัปเดตคะแนนลง Supabase (ในโลกจริง)
+            const { error } = await supabase
+                .from('submissions')
+                .update({ 
+                    ai_score: result.score, 
+                    ai_feedback: result.feedback 
+                })
+                .eq('id', submissionId);
+
+            if (error) {
+                 alert(`Error updating score: ${error.message}`);
+                 button.textContent = '❌ Error';
+                 button.disabled = false;
+                 return;
+            }
+            
+            // Refresh Dashboard
+            fetchSubmissions(); 
+            alert(`ประเมินผลเสร็จสิ้น: คะแนน ${result.score} - ${result.pass ? 'ผ่าน' : 'ไม่ผ่าน'}`);
+        }
+        
+        // --- 7. Table Sorting Function (เสริม) ---
+        function sortTable(n) {
+            // (Function สำหรับจัดเรียงตารางตามคอลัมน์)
+            // โค้ดนี้ถูกละไว้เพื่อเน้นส่วน AI/Supabase
+        }
+        window.sortTable = sortTable; // ทำให้เรียกใช้ได้จาก onclick ใน HTML
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', fetchSubmissions);
+        
+    </script>
+</body>
+</html>
