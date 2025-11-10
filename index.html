@@ -154,7 +154,7 @@
         const filterBtn = document.getElementById('filterBtn');
         const startDateInput = document.getElementById('startDate');
         const endDateInput = document.getElementById('endDate');
-        const employeeNameInput = document.getElementById('employeeNameInput'); // NEW
+        const employeeNameInput = document.getElementById('employeeNameInput'); // NEW: DOM Element สำหรับค้นหาชื่อ
         const submissionsList = document.getElementById('submissionsList');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const totalCount = document.getElementById('totalCount');
@@ -162,73 +162,73 @@
         
         // --- คุณประโยชน์ (Utilities) ---
         function showMessage(message, type = 'danger') {
-            messageBox.textContent = message; [cite: 27]
-            messageBox.className = `alert mt-5 alert-${type}`; [cite: 27]
-            messageBox.style.display = 'block'; [cite: 27]
+            messageBox.textContent = message;
+            messageBox.className = `alert mt-5 alert-${type}`;
+            messageBox.style.display = 'block';
         }
 
         function formatDateTime(isoString) {
-            const date = new Date(isoString); [cite: 28]
+            const date = new Date(isoString);
             return date.toLocaleString('th-TH', { 
                 year: 'numeric', 
                 month: 'short', 
                 day: 'numeric', 
                 hour: '2-digit', 
                 minute: '2-digit' 
-            }); [cite: 28, 29]
+            });
         }
         
         // --- ตรรกะการตรวจสอบสิทธิ์ (Auth Logic) ---
-        // (ไม่เปลี่ยนแปลง)
+        
         function checkAuth() {
             if (localStorage.getItem(AUTH_KEY) === 'authenticated') {
-                showDashboard(); [cite: 29, 30]
+                showDashboard();
             } else {
-                showLogin(); [cite: 30, 31]
+                showLogin();
             }
         }
 
         function showLogin() {
-            loginPage.style.display = 'flex'; [cite: 31, 32]
-            mainDashboard.style.display = 'none'; [cite: 32]
+            loginPage.style.display = 'flex';
+            mainDashboard.style.display = 'none';
         }
 
         function showDashboard() {
-            loginPage.style.display = 'none'; [cite: 32, 33]
-            mainDashboard.style.display = 'block'; [cite: 33]
+            loginPage.style.display = 'none';
+            mainDashboard.style.display = 'block';
             
-            // ตั้งค่าวันที่เริ่มต้นให้เป็นวันนี้ - 30 วัน และวันสิ้นสุดเป็นวันนี้ [cite: 33]
+            // ตั้งค่าวันที่เริ่มต้นให้เป็นวันนี้ - 30 วัน และวันสิ้นสุดเป็นวันนี้
             if (!startDateInput.value && !endDateInput.value) {
-                const today = new Date(); [cite: 33]
-                const pastDate = new Date(); [cite: 34]
-                pastDate.setDate(today.getDate() - 30); [cite: 34]
+                const today = new Date();
+                const pastDate = new Date();
+                pastDate.setDate(today.getDate() - 30);
                 
                 // แปลงเป็น YYYY-MM-DD
-                startDateInput.value = pastDate.toISOString().split('T')[0]; [cite: 34, 35]
-                endDateInput.value = today.toISOString().split('T')[0]; [cite: 35]
+                startDateInput.value = pastDate.toISOString().split('T')[0];
+                endDateInput.value = today.toISOString().split('T')[0];
 
                 // โหลดข้อมูลครั้งแรกทันที
-                loadSubmissions(); [cite: 35, 36]
+                loadSubmissions();
             }
         }
 
         function handleLogin() {
-            const user = document.getElementById('username').value.trim(); [cite: 36, 37]
-            const pass = document.getElementById('password').value; [cite: 37]
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value;
 
             if (user === VALID_USER && pass === VALID_PASS) {
-                localStorage.setItem(AUTH_KEY, 'authenticated'); [cite: 37, 38]
-                loginMessage.style.display = 'none'; [cite: 38]
+                localStorage.setItem(AUTH_KEY, 'authenticated');
+                loginMessage.style.display = 'none';
                 showDashboard();
             } else {
-                loginMessage.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'; [cite: 38, 39]
-                loginMessage.style.display = 'block'; [cite: 39]
+                loginMessage.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+                loginMessage.style.display = 'block';
             }
         }
         
         function handleLogout() {
-            localStorage.removeItem(AUTH_KEY); [cite: 39, 40]
-            showLogin(); [cite: 40]
+            localStorage.removeItem(AUTH_KEY);
+            showLogin();
         }
 
         // --- ตรรกะการโหลดข้อมูลหลัก (Main Data Logic - MODIFIED) ---
@@ -237,31 +237,31 @@
          * ดึงข้อมูลทั้งหมดจากตาราง submissions โดยมีตัวกรองวันที่และชื่อ
          */
         async function loadSubmissions() {
-            const startDate = startDateInput.value; [cite: 40, 41]
-            const endDate = endDateInput.value; [cite: 41]
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
             const employeeName = employeeNameInput.value.trim(); // NEW: ดึงค่าค้นหาชื่อ
             
             if (!startDate || !endDate) {
-                showMessage("กรุณาระบุ 'จากวันที่' และ 'ถึงวันที่' เพื่อค้นหา", "warning"); [cite: 41, 42]
-                submissionsList.innerHTML = '<p class="col-12 text-center text-muted">กรุณาเลือกช่วงวันที่เพื่อดูข้อมูล</p>'; [cite: 42]
-                totalCount.textContent = 'กรุณาเลือกช่วงวันที่เพื่อดูข้อมูล'; [cite: 42]
+                showMessage("กรุณาระบุ 'จากวันที่' และ 'ถึงวันที่' เพื่อค้นหา", "warning");
+                submissionsList.innerHTML = '<p class="col-12 text-center text-muted">กรุณาเลือกช่วงวันที่เพื่อดูข้อมูล</p>';
+                totalCount.textContent = 'กรุณาเลือกช่วงวันที่เพื่อดูข้อมูล';
                 return;
             }
 
-            loadingIndicator.style.display = 'block'; [cite: 43]
-            messageBox.style.display = 'none'; [cite: 43]
-            submissionsList.innerHTML = ''; // เคลียร์รายการเก่า [cite: 44]
+            loadingIndicator.style.display = 'block';
+            messageBox.style.display = 'none';
+            submissionsList.innerHTML = ''; // เคลียร์รายการเก่า
 
             // ปรับวันที่สิ้นสุดให้เป็น 23:59:59 ของวันนั้น เพื่อให้ครอบคลุมทั้งวัน
-            const endDateTime = endDate + 'T23:59:59.999Z'; [cite: 44, 45]
+            const endDateTime = endDate + 'T23:59:59.999Z';
             
             let query = supabase
                 .from('submissions')
                 .select('*')
                 // กรองข้อมูลตามช่วงวันที่
-                .gte('created_at', startDate) // มากกว่าหรือเท่ากับวันที่เริ่มต้น (00:00:00) 
-                .lte('created_at', endDateTime) // น้อยกว่าหรือเท่ากับวันที่สิ้นสุด (23:59:59) [cite: 46]
-                .order('created_at', { ascending: false }); [cite: 46, 47]
+                .gte('created_at', startDate) // มากกว่าหรือเท่ากับวันที่เริ่มต้น (00:00:00)
+                .lte('created_at', endDateTime) // น้อยกว่าหรือเท่ากับวันที่สิ้นสุด (23:59:59)
+                .order('created_at', { ascending: false });
 
             // NEW: กรองตามชื่อพนักงาน (ถ้ามีการระบุ)
             if (employeeName) {
@@ -272,65 +272,65 @@
             // Execute the query
             const { data, error } = await query;
             
-            loadingIndicator.style.display = 'none'; [cite: 47]
+            loadingIndicator.style.display = 'none';
 
             if (error) {
-                console.error('ข้อผิดพลาดในการดึงข้อมูลที่ส่งมา:', error); [cite: 47, 48]
-                showMessage(`เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}. ตรวจสอบ RLS Policy!`); [cite: 48]
+                console.error('ข้อผิดพลาดในการดึงข้อมูลที่ส่งมา:', error);
+                showMessage(`เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}. ตรวจสอบ RLS Policy!`);
                 totalCount.textContent = 'ไม่สามารถโหลดข้อมูลได้';
                 return;
             }
             
-            renderSubmissions(data); [cite: 49]
+            renderSubmissions(data);
         }
 
         /**
          * แสดงข้อมูลไฟล์เสียงที่ดึงมาในรูปแบบ Card
          */
         function renderSubmissions(submissions) {
-            totalCount.textContent = `พบรายการไฟล์เสียงที่ส่งมาแล้วทั้งหมด: ${submissions.length} รายการ`; [cite: 49, 50]
+            totalCount.textContent = `พบรายการไฟล์เสียงที่ส่งมาแล้วทั้งหมด: ${submissions.length} รายการ`;
             if (submissions.length === 0) {
-                submissionsList.innerHTML = '<p class="col-12 text-center text-muted">ไม่พบรายการไฟล์เสียงในช่วงวันที่ที่เลือก</p>'; [cite: 50, 51]
-                return; [cite: 51]
+                submissionsList.innerHTML = '<p class="col-12 text-center text-muted">ไม่พบรายการไฟล์เสียงในช่วงวันที่ที่เลือก</p>';
+                return;
             }
 
             submissions.forEach(submission => {
-                const submissionTime = formatDateTime(submission.created_at); [cite: 51]
+                const submissionTime = formatDateTime(submission.created_at);
                 
                 const cardHtml = `
                     <div class="col-sm-6 col-lg-4">
                         <div class="card submission-card h-100">
                             <div class="card-body d-flex flex-column">
-                                <h5 class="card-title text-primary">${submission.name || 'ไม่ระบุชื่อ'}</h5> [cite: 52, 53]
+                                <h5 class="card-title text-primary">${submission.name || 'ไม่ระบุชื่อ'}</h5>
                                 <h6 class="card-subtitle mb-2 text-muted">
-                                    <span class="badge bg-info">${submission.user_id ? submission.user_id.substring(0, 8) : 'N/A'}...</span> [cite: 53]
-                                    <span class="badge bg-warning text-dark">Part ${submission.part_number} | ข้อที่ ${submission.question_number}</span> [cite: 54]
+                                    <span class="badge bg-info">${submission.user_id ? submission.user_id.substring(0, 8) : 'N/A'}...</span>
+                                    <span class="badge bg-warning text-dark">Part ${submission.part_number} | ข้อที่ ${submission.question_number}</span>
                                 </h6>
                                 <p class="card-text flex-grow-1 mt-2">
-                                    <strong><i class="bi bi-chat-dots me-1"></i> คำถาม:</strong> ${submission.question_text}<br> [cite: 55]
+                                    <strong><i class="bi bi-chat-dots me-1"></i> คำถาม:</strong> ${submission.question_text}<br>
                                 </p>
                                 
-                                <div class="audio-player mt-3"> [cite: 56]
-                                    <label class="form-label mb-1">ไฟล์เสียงตอบกลับ:</label> [cite: 56]
-                                    <audio controls class="w-100"> [cite: 56]
-                                        <source src="${submission.audio_url}" type="audio/webm"> [cite: 57]
+                                <div class="audio-player mt-3">
+                                    <label class="form-label mb-1">ไฟล์เสียงตอบกลับ:</label>
+                                    <audio controls class="w-100">
+                                        <source src="${submission.audio_url}" type="audio/webm">
                                         เบราว์เซอร์ของคุณไม่รองรับการเล่นไฟล์เสียง
-                                    </audio> [cite: 58]
+                                    </audio>
                                 </div>
-                                <small class="d-block mt-2 text-secondary text-end"><i class="bi bi-clock me-1"></i> ${submissionTime}</small> [cite: 58, 59]
+                                <small class="d-block mt-2 text-secondary text-end"><i class="bi bi-clock me-1"></i> ${submissionTime}</small>
                             </div>
                         </div>
                     </div>
                 `;
-                submissionsList.insertAdjacentHTML('beforeend', cardHtml); [cite: 60]
+                submissionsList.insertAdjacentHTML('beforeend', cardHtml);
             });
         }
 
         // --- ตัวรับฟังเหตุการณ์และการเริ่มต้น (Event Listeners and Initialization) ---
         
-        loginBtn.addEventListener('click', handleLogin); [cite: 60, 61]
-        logoutBtn.addEventListener('click', handleLogout); [cite: 61]
-        filterBtn.addEventListener('click', loadSubmissions); [cite: 61]
+        loginBtn.addEventListener('click', handleLogin);
+        logoutBtn.addEventListener('click', handleLogout);
+        filterBtn.addEventListener('click', loadSubmissions);
         
         // เมื่อโหลดหน้าเสร็จ ให้ตรวจสอบสถานะการล็อกอิน
         document.addEventListener('DOMContentLoaded', checkAuth);
